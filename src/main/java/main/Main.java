@@ -26,6 +26,17 @@ public class Main {
         //dataReader.getSouvenirsByManufacturer(connection,scanner.nextLine() );
         dataReader.getSouvenirsByManufacturer(connection,manufacturer );
 
+        System.out.println("Введіть ім`я виробника ->");
+        String country = "United States";
+        dataReader.getSouvenirsByCountry(connection, country);
+
+        System.out.println("Введіть ціню ->");
+        double price = 20;
+        dataReader.getManufacturersByPrice(connection, price);
+
+
+
+
         db.closeConnection();
     }
 }
