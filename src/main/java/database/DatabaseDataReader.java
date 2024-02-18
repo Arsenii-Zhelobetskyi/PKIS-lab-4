@@ -20,7 +20,7 @@ public class DatabaseDataReader {
         Object[] apply(ResultSet resultSet);
     }
 
-    private void printTable(ResultSet resultSet, String[] header, List<Object[]> list) {
+    private void printTable(String[] header, List<Object[]> list) {
 
             AsciiTable at = new AsciiTable(); // виводимо результати
             at.addRule();
@@ -70,7 +70,7 @@ public class DatabaseDataReader {
                 list.add(new Object[]{resultSet.getInt("id"), resultSet.getString("name"), resultSet.getDate("date"), resultSet.getDouble("price")});
             }
 
-            printTable(resultSet, new String[]{"ID", "Name", "Date", "Price"}, list); // виводимо результати
+            printTable(new String[]{"ID", "Name", "Date", "Price"}, list); // виводимо результати
 
 
             resultSet.close(); // очищаємо ресурси, щоб не займати пам'ять
@@ -96,7 +96,7 @@ public class DatabaseDataReader {
             while (resultSet.next()) {
                 list.add(new Object[]{resultSet.getInt("id"), resultSet.getString("name"), resultSet.getDate("date"), resultSet.getDouble("price")});
             }
-            printTable(resultSet, new String[]{"ID", "Name", "Date", "Price"}, list);  // виводимо результати
+            printTable( new String[]{"ID", "Name", "Date", "Price"}, list);  // виводимо результати
 
 
             resultSet.close(); // очищаємо ресурси, щоб не займати пам'ять
@@ -121,7 +121,7 @@ public class DatabaseDataReader {
             while (resultSet.next()) {
                 list.add(new Object[]{resultSet.getInt("id"), resultSet.getString("name"), resultSet.getString("country")});
             }
-            printTable(resultSet, new String[]{"ID", "Name", "Country"}, list);  // виводимо результати
+            printTable(new String[]{"ID", "Name", "Country"}, list);  // виводимо результати
 
 
             resultSet.close(); // очищаємо ресурси, щоб не займати пам'ять
@@ -148,7 +148,7 @@ public class DatabaseDataReader {
             while (resultSet.next()) {
                 list.add(new Object[]{resultSet.getInt("id"), resultSet.getString("name"), resultSet.getString("country")});
             }
-            printTable(resultSet, new String[]{"ID", "Name", "Country"}, list);  // виводимо результати
+            printTable(new String[]{"ID", "Name", "Country"}, list);  // виводимо результати
 
 
             resultSet.close(); // очищаємо ресурси, щоб не займати пам'ять
