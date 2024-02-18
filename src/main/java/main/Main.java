@@ -34,6 +34,11 @@ public class Main {
         double price = 20;
         dataReader.getManufacturersByPrice(connection, price);
 
+        System.out.println("Введіть назву сувеніру ->");
+        String name = "nulla";
+        System.out.println("Введіть рік ->");
+        int year = 1994;
+        dataReader.getManufacturersByYear(connection, name, year);
 
 
 

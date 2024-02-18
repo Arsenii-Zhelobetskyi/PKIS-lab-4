@@ -131,4 +131,30 @@ public class DatabaseDataReader {
         }
     }
 
+
+
+    public  void getManufacturersByYear(Connection connection, String name, int year){
+        try {
+            PreparedStatement statement = connection.prepareStatement("SELECT id,name,country FROM manufacturers WHERE id IN ( SELECT manufacturer_s_details FROM souvenirs WHERE name = ? AND YEAR(date) = ?)");
+            statement.setString(1, name); // Встановлюємо значення параметру
+            statement.setInt(2, year); // Встановлюємо значення параметру
+            ResultSet resultSet = statement.executeQuery(); // Виконуємо запит
+
+//            if (!resultSet.next()) {
+////                throw new SQLException("Сувенірів з ціною менше ніж" + price + " не знайдено.");
+//            }
+
+            List<Object[]> list = new ArrayList<>();
+            while (resultSet.next()) {
+                list.add(new Object[]{resultSet.getInt("id"), resultSet.getString("name"), resultSet.getString("country")});
+            }
+            printTable(resultSet, new String[]{"ID", "Name", "Country"}, list);  // виводимо результати
+
+
+            resultSet.close(); // очищаємо ресурси, щоб не займати пам'ять
+            statement.close();
+        } catch (SQLException e) { // обробляємо помилки
+            System.err.println("Помилка при спробі вивести інформацію про сувеніри за заданим виробником: " + e.getMessage());
+        }
+    }
 }
