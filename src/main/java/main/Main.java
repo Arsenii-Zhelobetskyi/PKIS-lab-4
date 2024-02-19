@@ -1,23 +1,23 @@
 package main;
 
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.Scanner;
+
 import database.Database;
 import database.DatabaseDataReader;
 import database.DatabaseDataWriter;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.Date;
-import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
+        Scanner scanner = new Scanner(System.in); // Створюємо об'єкт класу Scanner для зчитування введення користувача
 
-        Database db = new Database();
-        DatabaseDataReader dataReader = new DatabaseDataReader();
-        DatabaseDataWriter dataWriter = new DatabaseDataWriter();
+        Database db = new Database(); // Створюємо об'єкт класу Database для з'єднання з базою даних
+        DatabaseDataReader dataReader = new DatabaseDataReader(); // Створюємо об'єкт класу DatabaseDataReader для читання даних з бази даних
+        DatabaseDataWriter dataWriter = new DatabaseDataWriter(); // Створюємо об'єкт класу DatabaseDataWriter для запису даних в базу даних
         Connection connection = null;
-        try {
+        try { // Встановлюємо з'єднання з базою даних
             connection = db.connect("souvenirs", "root", "root");
         } catch (SQLException e) {
             System.out.println("Не вдалось підключитись до бази даних! Помилка: " + e.getMessage());
@@ -32,7 +32,7 @@ public class Main {
             System.out.println("2. Вивести інформацію про сувеніри заданої країни");
             System.out.println("3. Вивести інформацію про виробників, ціна на сувеніри яких менше заданої");
             System.out.println("4. Вивести інформацію про виробників заданого сувеніру, який виготовлений у заданому році");
-            System.out.println("5. Видалити вказаного виробника та всі його сувеніру");
+            System.out.println("5. Видалити вказаного виробника та всі його сувеніри");
             System.out.println("6. Додати нового виробника та сувенір");
             System.out.println("7. Вийти з програми");
             System.out.print("Ваш вибір: ");
