@@ -1,6 +1,6 @@
 create table souvenirs.manufacturers
 (
-    id      int auto_increment
+    id      varchar(8)   not null
         primary key,
     name    varchar(100) not null,
     country varchar(100) not null
@@ -8,12 +8,12 @@ create table souvenirs.manufacturers
 
 create table souvenirs.souvenirs
 (
-    id                     int auto_increment
+    id                     varchar(8)   not null
         primary key,
     name                   varchar(100) not null,
-    manufacturer_s_details int          not null,
+    manufacturer_s_details varchar(8)   not null,
     date                   date         not null,
-    price                  int          not null,
+    price                  double       not null,
     constraint souvenirs_manufacturers_id_fk
         foreign key (manufacturer_s_details) references souvenirs.manufacturers (id)
             on delete cascade
