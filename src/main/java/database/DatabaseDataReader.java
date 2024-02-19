@@ -10,6 +10,7 @@ import java.util.List;
 
 import de.vandermeer.asciitable.AsciiTable;
 import de.vandermeer.asciitable.CWC_LongestLine;
+import java.util.function.Function;
 
 
 public class DatabaseDataReader {
@@ -38,95 +39,127 @@ public class DatabaseDataReader {
     }
 
     /**
+     * універсальна функція, яка виконує SQL-запит до бази даних і обробляє результати.
+     * @param connection    з'єднання з базою даних
+     * @param query         SQL-запит, який треба виконати
+     * @param tableHeader   Масив рядків, що містить назви стовпців таблиці
+     * @param errorMessage  Повідомлення, яке виводиться, якщо результати запиту порожні
+     * @param mapper        Лямбда-вираз, що конвертує результати запиту в об'єкти масиву
+     * @param parameters    Параметри запиту
+     */
+    public void getDataByQuery(Connection connection, String query,String[] tableHeader, String errorMessage, Function<ResultSet, Object[]> mapper, Object... parameters) {
+
+        try (PreparedStatement statement = connection.prepareStatement(query)) { // створюємо стейтмент, щоб зробити запит
+            for (int i = 0; i < parameters.length; i++) { // заповнюємо параметри в запиті
+                if (parameters[i] instanceof String) {
+                    statement.setString(i + 1, (String) parameters[i]);
+                } else if (parameters[i] instanceof Double) {
+                    statement.setDouble(i + 1, (Double) parameters[i]);
+                } else if (parameters[i] instanceof Integer) {
+                    statement.setInt(i + 1, (Integer) parameters[i]);
+                }
+            }
+
+            try (ResultSet resultSet = statement.executeQuery()) { // виконуємо запит
+                List<Object[]> list = new ArrayList<>();
+                while (resultSet.next()) {// розбираємо результати у список, щоб їх можна було відобразити у таблиці
+                    list.add(mapper.apply(resultSet));
+                }
+                if (list.isEmpty()) {// якщо список пустий
+                    throw new SQLException(errorMessage);
+                } else {
+                    printTable(tableHeader, list);//друкуємо таблицю
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Помилка: " + e.getMessage());
+        }
+    }
+    /**
      * Вивести інформацію про сувеніри заданого виробника.
      *
      * @param connection   - з'єднання з базою даних
      * @param manufacturer - назва виробника
      */
     public void getSouvenirsByManufacturer(Connection connection, String manufacturer) {
-        // тут використовуємо конструкцію try-with-resources, щоб автоматично закрити ресурси
-
-        try (PreparedStatement statement = connection.prepareStatement("SELECT id, name, date, price FROM souvenirs WHERE manufacturer_s_details = (SELECT id FROM manufacturers WHERE name = ?)")) {
-            statement.setString(1, manufacturer); // Встановлюємо значення параметру
-
-            try (ResultSet resultSet = statement.executeQuery()) { // Виконуємо запит
-
-                List<Object[]> list = new ArrayList<>(); // Створюємо список для зберігання результатів
-                while (resultSet.next()) { // заповнюємо список результатами
-                    list.add(new Object[]{resultSet.getInt("id"), resultSet.getString("name"), resultSet.getDate("date"), resultSet.getDouble("price")});
-                }
-                if (list.isEmpty()) {
-                    throw new SQLException("Виробника " + manufacturer + " не знайдено.");
-                } else { // виводимо результати
-                    printTable(new String[]{"ID", "Name", "Date", "Price"}, list);
-                }
-            }
-
-        } catch (SQLException e) {
-
-            System.err.println("Помилка при спробі вивести інформацію про сувеніри за заданим виробником: " + e.getMessage());
-        }
+        getDataByQuery(connection,
+                "SELECT id, name, date, price FROM souvenirs WHERE manufacturer_s_details = (SELECT id FROM manufacturers WHERE name = ?)",
+                new String[] {"ID", "Name", "Date", "Price"},
+                "Виробника " + manufacturer + " не знайдено.",
+                resultSet -> {
+                    try {
+                        return new Object[]{resultSet.getString("id"), resultSet.getString("name"), resultSet.getDate("date"), resultSet.getDouble("price")};
+                    } catch (SQLException e) {
+                        throw new RuntimeException(e);
+                    }
+                },
+                manufacturer
+        );
     }
 
-    public void getSouvenirsByCountry(Connection connection, String country) {
-        try (PreparedStatement statement = connection.prepareStatement("SELECT id, name, date, price FROM souvenirs WHERE manufacturer_s_details IN (SELECT id FROM manufacturers WHERE country = ?)")) {
-            statement.setString(1, country);
-            try (ResultSet resultSet = statement.executeQuery()) {
-                List<Object[]> list = new ArrayList<>();
-                while (resultSet.next()) {
-                    list.add(new Object[]{resultSet.getInt("id"), resultSet.getString("name"), resultSet.getDate("date"), resultSet.getDouble("price")});
-                }
-                if (list.isEmpty()) {
-                    throw new SQLException("Сувенірів від виробників з країни " + country + " не знайдено.");
-
-                } else {
-                    printTable(new String[]{"ID", "Name", "Date", "Price"}, list);
-                }
-            }
-        } catch (SQLException e) {
-            System.err.println("Помилка при спробі вивести інформацію про сувеніри за заданою країною: " + e.getMessage());
-        }
+    /**
+     * вивести інформацію про сувеніри, що виготовлені у заданій країні
+     * @param connection    з'єднання з базою даних
+     * @param country країна
+     */
+    public  void getSouvenirsByCountry(Connection connection, String country) {
+        getDataByQuery(connection,
+                "SELECT id, name, date, price FROM souvenirs WHERE manufacturer_s_details IN (SELECT id FROM manufacturers WHERE country = ?)",
+                new String[] {"ID", "Name", "Date", "Price"},
+                "Сувенірів від виробників з країни " + country + " не знайдено.",
+                resultSet -> {
+                    try {
+                        return new Object[]{resultSet.getString("id"), resultSet.getString("name"), resultSet.getDate("date"), resultSet.getDouble("price")};
+                    } catch (SQLException e) {
+                        throw new RuntimeException(e);
+                    }
+                },
+                country
+        );
     }
 
-
+    /**
+     * Вивести інформацію про виробників, ціни на сувеніри яких менші за задану
+     * @param connection  з'єднання з базою даних
+     * @param price ціна
+     */
     public void getManufacturersByPrice(Connection connection, double price) {
-        try (PreparedStatement statement = connection.prepareStatement("SELECT id, name, country FROM manufacturers WHERE id IN (SELECT manufacturer_s_details FROM souvenirs WHERE price < ?)")) {
-            statement.setDouble(1, price);
-            try (ResultSet resultSet = statement.executeQuery()) {
-                List<Object[]> list = new ArrayList<>();
-                while (resultSet.next()) {
-                    list.add(new Object[]{resultSet.getInt("id"), resultSet.getString("name"), resultSet.getString("country")});
-                }
-                if (list.isEmpty()) {
-                    throw new SQLException("Виробників сувенірів з ціною менше ніж " + price + " не знайдено.");
-                } else {
-                    printTable(new String[]{"ID", "Name", "Country"}, list);
-                }
-            }
-        } catch (SQLException e) {
-            System.err.println("Помилка при спробі вивести інформацію про виробників за ціною: " + e.getMessage());
-        }
+        getDataByQuery(connection,
+                "SELECT id, name, country FROM manufacturers WHERE id IN (SELECT manufacturer_s_details FROM souvenirs WHERE price < ?)",
+                new String[] {"ID", "Name", "Country"},
+                "Виробників сувенірів з ціною менше ніж " + price + " не знайдено.",
+                resultSet -> {
+                    try {
+                        return new Object[]{resultSet.getString("id"), resultSet.getString("name"), resultSet.getString("country")};
+                    } catch (SQLException e) {
+                        throw new RuntimeException(e);
+                    }
+                },
+                price
+                );
     }
 
-
-
+    /**
+     * Вивести інформацію про виробників заданого сувеніра, що вироблений у заданому році
+     * @param connection з'єднання з бд
+     * @param name назва сувеніру
+     * @param year рік виробу сувеніру
+     */
     public void getManufacturersByYear(Connection connection, String name, int year) {
-        try (PreparedStatement statement = connection.prepareStatement("SELECT id, name, country FROM manufacturers WHERE id IN (SELECT manufacturer_s_details FROM souvenirs WHERE name = ? AND YEAR(date) = ?)")) {
-            statement.setString(1, name);
-            statement.setInt(2, year);
-            try (ResultSet resultSet = statement.executeQuery()) {
-                List<Object[]> list = new ArrayList<>();
-                while (resultSet.next()) {
-                    list.add(new Object[]{resultSet.getInt("id"), resultSet.getString("name"), resultSet.getString("country")});
-                }
-                if (list.isEmpty()) {
-                    System.out.println("Виробників сувенірів з назвою " + name + " та роком " + year + " не знайдено.");
-                } else {
-                    printTable(new String[]{"ID", "Name", "Country"}, list);
-                }
-            }
-        } catch (SQLException e) {
-            System.err.println("Помилка при спробі вивести інформацію про виробників за роком: " + e.getMessage());
-        }
+        getDataByQuery(connection,
+                "SELECT id, name, country FROM manufacturers WHERE id IN (SELECT manufacturer_s_details FROM souvenirs WHERE name = ? AND YEAR(date) = ?)",
+                new String[] {"ID", "Name", "Country"},
+                "Виробників сувенірів з назвою " + name + " та роком " + year + " не знайдено.",
+                resultSet -> {
+                    try {
+                        return new Object[]{resultSet.getString("id"), resultSet.getString("name"), resultSet.getString("country")};
+                    } catch (SQLException e) {
+                        throw new RuntimeException(e);
+                    }
+                },
+                name, year
+        );
     }
+
+
 }
